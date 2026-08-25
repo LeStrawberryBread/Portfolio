@@ -1,0 +1,39 @@
+================================================================
+Priority 1 (P1) - Must Have
+================================================================
+TODO:
+    Add "cd .." to each section.
+    "cd .." should look the same as the terminal.
+
+TODO:
+    Add return-to-top functionality to navbar.
+
+TODO:
+    Update Frieren-Inspired RPG to match current progress on the project.
+    Finalized name: "Nachhall" - german for "Reverberations"
+    Changes since initial description (see project for more details):
+        - Moved from Proof-of-concept to production
+        - JFA screen-space VFX
+        - Colored outlines based on tagged lighting, including emissive meshes
+        - Refactored and added spell system for charge/windup spells
+        - System for spell effects so various spells can interact with each other
+        - Moved over to Unreal Engine 5.8 from Unity, potential downgrade to 5.4 in the future
+
+TODO:
+    Add dedicated page to "Nachhall" (AKA Frieren-Inspired RPG)
+    Showcase:
+        - Jump-Flood Algorithm VFX
+        - Lighting-colored outline methodology
+        - TODO: Determine what else to showcase
+
+================================================================
+Priority 2 (P2) - Should Have
+================================================================
+TODO:
+    Increase fade of auroral streaks behind name.
+
+TODO:
+    Add increased randomization to auroral streaks.
+
+TODO:
+    Increase number of stars. Should be proportional to width of each auroral streak.
