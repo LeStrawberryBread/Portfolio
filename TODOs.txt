@@ -2,6 +2,12 @@
 Priority 1 (P1) - Must Have
 ================================================================
 TODO:
+    Add resume (preferably using a method that auto-updates it).
+
+TODO:
+    Make dark text more readable. E.g. "// software engineer · embedded systems · game dev · maker"
+
+TODO:
     Add "cd .." to each section.
     "cd .." should look the same as the terminal.
 
