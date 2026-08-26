@@ -709,15 +709,15 @@
             <ul>
               <li>B.S. Computer Science</li>
               <li>Rose-Hulman, May 2027</li>
-              <li>GPA: 3.87 / 4.0</li>
+              <li>GPA: 3.88 / 4.0</li>
               <li>Dean's List 2023–2026</li>
+              <li>Alpha Lambda Delta - Honor Society</li>
             </ul>
           </div>
           <div class="sidebar-block">
-            <h4>// elsewhere</h4>
+            <h4>// extracurricular</h4>
             <ul>
               <li>Pickleball Club President</li>
-              <li>Alpha Lambda Delta</li>
               <li>Taekwondo Black Belt</li>
             </ul>
           </div>
@@ -1195,6 +1195,18 @@
     */
 
     // ================================================================
+    // RESPONSIVE SCALE — clouds were hand-tuned to look right at ~1300px
+    // viewport width. This scales initialWidth + amplitude proportionally
+    // for other widths, clamped so very narrow/ultra-wide windows don't
+    // collapse to nothing or blow out.
+    // ================================================================
+    const AURORA_REF_WIDTH = 1300;
+    function auroraWidthScale() {
+      const raw = window.innerWidth / AURORA_REF_WIDTH;
+      return Math.min(1.5, Math.max(0.5, raw));
+    }
+
+    // ================================================================
     // GASEOUS CLOUD BUILDER
     // Reusable function for gaseous cloud graphics.
     //
@@ -1352,10 +1364,11 @@
     //   blue  (-12°): upward sweep from lower-right
 
     window.addEventListener('load', () => {
+      const s = auroraWidthScale();
       greenInfo = buildGaseousCloud({
-        color: '#94D991', initialWidth: 55,
+        color: '#94D991', initialWidth: 55 * s,
         angle: 28, endYOffset: -25, endXOffset: 100,
-        ampScale: 0.40, startSpreadBottom: 72
+        ampScale: 0.40 * s, startSpreadBottom: 72 * s
       });
       greenSvg = greenInfo.svg;
     });
@@ -1367,19 +1380,22 @@
       document.getElementById('green-amp-val').textContent   = a.toFixed(2);
       document.getElementById('green-endx-val').textContent  = ex;
       if (greenSvg) greenSvg.remove();
+      const s = auroraWidthScale();
       greenInfo = buildGaseousCloud({
-        color: '#94D991', initialWidth: 55,
+        color: '#94D991', initialWidth: 55 * s,
         angle: 28 + fanRotOffset, endYOffset: -25, endXOffset: ex,
-        ampScale: a, startSpreadBottom: 72, wavesOverride: w
+        ampScale: a * s, startSpreadBottom: 72 * s, wavesOverride: w
       });
       greenSvg = greenInfo.svg;
       buildStars();
     }
 
     window.addEventListener('load', () => {
+      const s = auroraWidthScale();
       pinkInfo = buildGaseousCloud({
-        color: '#F26398', initialWidth: 100,
-        angle: 14, endYOffset: 0, endXOffset: 120
+        color: '#F26398', initialWidth: 100 * s,
+        angle: 14, endYOffset: 0, endXOffset: 120,
+        ampScale: 1 * s
       });
       pinkSvg = pinkInfo.svg;
     });
@@ -1391,20 +1407,22 @@
       document.getElementById('pink-amp-val').textContent   = a.toFixed(2);
       document.getElementById('pink-endx-val').textContent  = ex;
       if (pinkSvg) pinkSvg.remove();
+      const s = auroraWidthScale();
       pinkInfo = buildGaseousCloud({
-        color: '#F26398', initialWidth: 100,
+        color: '#F26398', initialWidth: 100 * s,
         angle: 14 + fanRotOffset, endYOffset: 0, endXOffset: ex,
-        ampScale: a, wavesOverride: w
+        ampScale: a * s, wavesOverride: w
       });
       pinkSvg = pinkInfo.svg;
       buildStars();
     }
 
     window.addEventListener('load', () => {
+      const s = auroraWidthScale();
       blueInfo = buildGaseousCloud({
-        color: '#8FD6E1', initialWidth: 75,
+        color: '#8FD6E1', initialWidth: 75 * s,
         angle: -1, endYOffset: 25, endXOffset: 130,
-        ampScale: 0.70, wavesOverride: 5
+        ampScale: 0.70 * s, wavesOverride: 5
       });
       blueSvg = blueInfo.svg;
     });
@@ -1416,10 +1434,11 @@
       document.getElementById('blue-amp-val').textContent   = a.toFixed(2);
       document.getElementById('blue-endx-val').textContent  = ex;
       if (blueSvg) blueSvg.remove();
+      const s = auroraWidthScale();
       blueInfo = buildGaseousCloud({
-        color: '#8FD6E1', initialWidth: 75,
+        color: '#8FD6E1', initialWidth: 75 * s,
         angle: -1 + fanRotOffset, endYOffset: 25, endXOffset: ex,
-        ampScale: a, wavesOverride: w
+        ampScale: a * s, wavesOverride: w
       });
       blueSvg = blueInfo.svg;
       buildStars();
@@ -1468,16 +1487,39 @@
       return cubicBezierPoint(p0, p1, p2, p3, localT);
     }
 
+    // estimate the enclosed area of a cloud (the band between its two wavy
+    // edges) by sampling both curves and running the shoelace formula on
+    // the resulting closed polygon. Used to make star count scale with
+    // how much visual "canvas" a streak actually covers, not just its length.
+    function estimateCloudArea(sx, sy, spreadTop, spreadBottom, segs1, segs2, samples = 24) {
+      const topPts    = [];
+      const bottomPts = [];
+      for (let i = 0; i <= samples; i++) {
+        const t = i / samples;
+        topPts.push(pointOnWavyLine(sx, sy - spreadTop,    segs1, t));
+        bottomPts.push(pointOnWavyLine(sx, sy + spreadBottom, segs2, t));
+      }
+      // polygon: top edge forward, then bottom edge backward, closing the loop
+      const poly = topPts.concat(bottomPts.reverse());
+      let area = 0;
+      for (let i = 0; i < poly.length; i++) {
+        const a = poly[i];
+        const b = poly[(i + 1) % poly.length];
+        area += a.x * b.y - b.x * a.y;
+      }
+      return Math.abs(area) / 2;
+    }
+
     // ================================================================
     // STAR SETTINGS — all of these are also exposed in the tuner UI
     // ================================================================
     const starSettings = {
-      spacing: 42,     // px of cloud length per star; smaller = more stars
+      density: 3.8,    // stars per 10,000px² of cloud area; bigger = denser
       minCount: 10,    // minimum stars per cloud
       blinkMin: 2.5,   // seconds
       blinkMax: 5.5,   // seconds
-      sizeMin: 1.0,    // SVG radius
-      sizeMax: 2.6,    // SVG radius
+      sizeMin: 1.2,    // SVG radius
+      sizeMax: 2.8,    // SVG radius
       opLo: 0.15,      // minimum opacity
       opHi: 0.95,      // maximum opacity
       delayMax: 5.0    // seconds of random phase offset
@@ -1489,7 +1531,7 @@
         return el ? parseFloat(el.value) : fallback;
       };
 
-      starSettings.spacing  = read('star-spacing', starSettings.spacing);
+      starSettings.density  = read('star-density', starSettings.density);
       starSettings.minCount = read('star-min-count', starSettings.minCount);
       starSettings.blinkMin = read('star-blink-min', starSettings.blinkMin);
       starSettings.blinkMax = read('star-blink-max', starSettings.blinkMax);
@@ -1523,10 +1565,10 @@
       clouds.forEach(info => {
         const { sx, sy, ex, ey, spreadTop, spreadBottom, segs1, segs2, color } = info;
 
-        const dist  = Math.hypot(ex - sx, ey - sy);
+        const area  = estimateCloudArea(sx, sy, spreadTop, spreadBottom, segs1, segs2);
         const count = Math.max(
           starSettings.minCount,
-          Math.round(dist / Math.max(1, starSettings.spacing))
+          Math.round(area * starSettings.density / 10000)
         );
 
         for (let n = 0; n < count; n++) {
@@ -1587,13 +1629,24 @@
       document.getElementById('blue-waves').addEventListener('input', rebuildBlue);
       document.getElementById('blue-amp').addEventListener('input', rebuildBlue);
       document.getElementById('fan-rot').addEventListener('input', rebuildAll);
+
+      // re-scale clouds proportionally when the viewport width changes
+      let resizeTimer = null;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          rebuildGreen();
+          rebuildPink();
+          rebuildBlue();
+        }, 120);
+      });
       document.getElementById('green-endx').addEventListener('input', rebuildGreen);
       document.getElementById('pink-endx').addEventListener('input', rebuildPink);
       document.getElementById('blue-endx').addEventListener('input', rebuildBlue);
 
       // star tuner — changing any of these immediately rebuilds the starfield
       const starControls = [
-        ['star-spacing', 'star-spacing-val', 0],
+        ['star-density', 'star-density-val', 1],
         ['star-min-count', 'star-min-count-val', 0],
         ['star-blink-min', 'star-blink-min-val', 1],
         ['star-blink-max', 'star-blink-max-val', 1],
@@ -1630,9 +1683,9 @@
       mask.style.cssText =
         `position:absolute;left:${cx}px;top:${cy}px;` +
         'transform:translate(-50%,-50%);' +
-        'width:720px;height:400px;' +
+        'width:450px;height:400px;' +
         'background:#0d0d0d;border-radius:50%;' +
-        'filter:blur(85px);pointer-events:none;z-index:-1;';
+        'filter:blur(42px);pointer-events:none;z-index:-1;';
       hero.appendChild(mask);
     });
     // copy-to-clipboard for contact rows
@@ -1876,8 +1929,8 @@
         padding:14px 18px;font-family:'JetBrains Mono',monospace;font-size:11px;
         color:#6e6e6e;line-height:2;min-width:220px;">
       <div style="color:#d0d0d0;margin-bottom:6px;">// stars</div>
-      spacing &nbsp;<span id="star-spacing-val" style="color:#d0d0d0;">42</span>px<br>
-      <input id="star-spacing" type="range" min="1" max="100" step="1" value="42"
+      density &nbsp;<span id="star-density-val" style="color:#d0d0d0;">3.8</span>/10k px²<br>
+      <input id="star-density" type="range" min="0.2" max="10" step="0.1" value="3.8"
         style="width:100%;accent-color:#d0d0d0;"><br>
       min count &nbsp;<span id="star-min-count-val" style="color:#d0d0d0;">10</span><br>
       <input id="star-min-count" type="range" min="0" max="30" step="1" value="10"
