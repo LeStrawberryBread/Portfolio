@@ -1219,7 +1219,7 @@
     //   angle — degrees of approach: positive = from above (sweeps down), negative = from below
     //   endYOffset / endXOffset — fine-tune convergence point relative to name center
     // ================================================================
-    function buildGaseousCloud({ color, initialWidth, angle = 0, endYOffset = 0, endXOffset = 0, ampScale = 1, wavesOverride, startSpreadBottom } = {}) {
+    function buildGaseousCloud({ color, initialWidth, angle = 0, endYOffset = 0, endXOffset = 0, ampScale = 1, wavesOverride, startSpreadBottom, waveScale = 1 } = {}) {
       const rand = (lo, hi) => lo + Math.random() * (hi - lo);
 
       const hero    = document.getElementById('home');
@@ -1317,9 +1317,13 @@
         ).join('');
 
       // formula derived from pink(100)→4, green(55)→9: (136 - width) / 9
-      const waves = wavesOverride !== undefined
+      // waveScale keeps wavelength proportional to viewport width: without it,
+      // wave count stayed fixed while the travel distance shrunk on narrow
+      // viewports, so the streaks got visibly wavier as the screen got smaller.
+      const baseWaves = wavesOverride !== undefined
         ? wavesOverride
         : Math.max(2, Math.round((136 - initialWidth) / 9));
+      const waves = Math.max(2, Math.round(baseWaves * waveScale));
       const phase = 0;
 
       // startSpreadBottom lets the lower starting line sit asymmetrically from the upper
@@ -1366,9 +1370,9 @@
     window.addEventListener('load', () => {
       const s = auroraWidthScale();
       greenInfo = buildGaseousCloud({
-        color: '#94D991', initialWidth: 55 * s,
-        angle: 28, endYOffset: -25, endXOffset: 100,
-        ampScale: 0.40 * s, startSpreadBottom: 72 * s
+        color: '#94D991', initialWidth: 200 * s,
+        angle: 40, endYOffset: -20, endXOffset: 135,
+        ampScale: 0.40 * s, wavesOverride: 6, waveScale: s
       });
       greenSvg = greenInfo.svg;
     });
@@ -1382,9 +1386,9 @@
       if (greenSvg) greenSvg.remove();
       const s = auroraWidthScale();
       greenInfo = buildGaseousCloud({
-        color: '#94D991', initialWidth: 55 * s,
-        angle: 28 + fanRotOffset, endYOffset: -25, endXOffset: ex,
-        ampScale: a * s, startSpreadBottom: 72 * s, wavesOverride: w
+        color: '#94D991', initialWidth: 225 * s,
+        angle: 35 + fanRotOffset, endYOffset: 25, endXOffset: ex,
+        ampScale: a * s, startSpreadBottom: 72 * s, wavesOverride: w, waveScale: s
       });
       greenSvg = greenInfo.svg;
       buildStars();
@@ -1393,9 +1397,9 @@
     window.addEventListener('load', () => {
       const s = auroraWidthScale();
       pinkInfo = buildGaseousCloud({
-        color: '#F26398', initialWidth: 100 * s,
-        angle: 14, endYOffset: 0, endXOffset: 120,
-        ampScale: 1 * s
+        color: '#F26398', initialWidth: 125 * s,
+        angle: 15, endYOffset: 30, endXOffset: 50,
+        ampScale: 1 * s, waveScale: s
       });
       pinkSvg = pinkInfo.svg;
     });
@@ -1411,7 +1415,7 @@
       pinkInfo = buildGaseousCloud({
         color: '#F26398', initialWidth: 100 * s,
         angle: 14 + fanRotOffset, endYOffset: 0, endXOffset: ex,
-        ampScale: a * s, wavesOverride: w
+        ampScale: a * s, wavesOverride: w, waveScale: s
       });
       pinkSvg = pinkInfo.svg;
       buildStars();
@@ -1421,8 +1425,8 @@
       const s = auroraWidthScale();
       blueInfo = buildGaseousCloud({
         color: '#8FD6E1', initialWidth: 75 * s,
-        angle: -1, endYOffset: 25, endXOffset: 130,
-        ampScale: 0.70 * s, wavesOverride: 5
+        angle: -2, endYOffset: 25, endXOffset: 130,
+        ampScale: 0.70 * s, wavesOverride: 3, waveScale: s
       });
       blueSvg = blueInfo.svg;
     });
@@ -1438,14 +1442,14 @@
       blueInfo = buildGaseousCloud({
         color: '#8FD6E1', initialWidth: 75 * s,
         angle: -1 + fanRotOffset, endYOffset: 25, endXOffset: ex,
-        ampScale: a * s, wavesOverride: w
+        ampScale: a * s, wavesOverride: w, waveScale: s
       });
       blueSvg = blueInfo.svg;
       buildStars();
     }
 
     // fan rotation offset (shifts all three base angles together)
-    let fanRotOffset = 0;
+    let fanRotOffset = 6;
     function rebuildAll() {
       fanRotOffset = parseInt(document.getElementById('fan-rot').value);
       document.getElementById('fan-rot-val').textContent = fanRotOffset;
@@ -1518,8 +1522,8 @@
       minCount: 10,    // minimum stars per cloud
       blinkMin: 2.5,   // seconds
       blinkMax: 5.5,   // seconds
-      sizeMin: 1.2,    // SVG radius
-      sizeMax: 2.8,    // SVG radius
+      sizeMin: 1.0,    // SVG radius
+      sizeMax: 2.6,    // SVG radius
       opLo: 0.15,      // minimum opacity
       opHi: 0.95,      // maximum opacity
       delayMax: 5.0    // seconds of random phase offset
@@ -1685,7 +1689,7 @@
         'transform:translate(-50%,-50%);' +
         'width:450px;height:400px;' +
         'background:#0d0d0d;border-radius:50%;' +
-        'filter:blur(42px);pointer-events:none;z-index:-1;';
+        'filter:blur(40px);pointer-events:none;z-index:-1;';
       hero.appendChild(mask);
     });
     // copy-to-clipboard for contact rows
